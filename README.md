@@ -169,3 +169,27 @@ export const { increment, decrement } = counterSlice.actions;
 ```
 
 - 각 리듀서마다 적절한 action 생성자와 action type을 자동으로 생성하므로 직접 작성하지 않아도 된다.
+
+<br />
+
+## 👨‍💻 createAsyncThunk
+
+- `createAsyncThunk`를 선언하게 되면 첫 번째 파라미터로 선언한 액션 이름에 pending, fulfilled, rejected의 상태에 대한 action을 자동으로 생성해주게 된다.
+- AbortController를 지원하기 때문에 thunk를 사용하여도 api에 대한 취소 작업이 가능하다.
+
+```js
+const fetchTodo = createAsyncThunk(
+  `todo/fetchTodo`, // 액션 이름을 정의해 주도록 합니다.
+  async (todoId, thunkAPI) => {
+    // 비동기 호출 함수를 정의합니다.
+    const response = await todoApi.fetchTodoInfo(todoId);
+    return response.data;
+  }
+);
+
+// fetchTodo.pending => todo/fetchTodo/pending
+// fetchTodo.fulfilled  => todo/fetchTodo/fulfilled
+// fetchTodo.rejected  => todo/fetchTodo/rejected
+```
+
+<br />

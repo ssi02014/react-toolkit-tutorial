@@ -1,44 +1,171 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app), using the [Redux](https://redux.js.org/) and [Redux Toolkit](https://redux-toolkit.js.org/) template.
+# 💻 Redux-toolkit-Tutorial
 
-## Available Scripts
+## 🏃‍♂️ Start
 
-In the project directory, you can run:
+- yarn create react-app (프로젝트 이름) --template redux
+- yarn add @reduxjs/toolkit redux-devtools-extension
+- yarn add @types/react-redux //타입스크립트
 
-### `yarn start`
+<br />
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## 👨‍💻 configureStore
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+- Redux Toolkit에는 Redux 코드를 단순화하는데 도움이 되는 몇 가지 기능 중 첫 번재가 `configureStore`이다.
+- 일반적으로 createStore()를 호출하고 root reducer 함수를 전달하여 redux store를 구성한다.
+- Redux Toolkit은 createStor()를 래핑한 configureStore() 함수를 제공하고 이 함수는 기본적으로 createStore()과 동일한 기능을 제공한다. 하지만 configureStore()는 store를 생성하는 단계에서 몇 가지 유용한 개발 도구가 설정되도록 한다.
+- configureStore()는 여러 개의 인자 대신 이름이 지정된 하나의 object를 인자로 받으므로, reducer 함수를 reducer라는 이름으로 전달해야 한다.
 
-### `yarn test`
+```ts
+// Before:
+const store = createStore(counter);
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+// After:
+const store = configureStore({
+  reducer: counter,
+});
 
-### `yarn build`
+// Example
+const reducer = {
+    ...contractsReducer,
+    (...)
+}
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+const rootReducer = combineReducers(reducer);
+export const  persistedReducer = persistReducer(persistConfig, rootReducer);
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: (...),
+      },
+    })
+      .prepend()
+      // prepend and concat calls can be chained
+      .concat(middlewares),
+  devTools: process.env.NODE_ENV !== "production",
+});
+```
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+<br />
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 👨‍💻 createAction
 
-### `yarn eject`
+- createAction은 액션 타입 문자열을 인자로 받고, 해당 타입을 사용하는 액션 생성자함수를 반환한다.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+```js
+// Before: 액션 type과 생성함수를 모두 작성
+const INCREMENT = "INCREMENT";
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+function incrementOriginal() {
+  return { type: INCREMENT };
+}
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+console.log(incrementOriginal()); // {type: "INCREMENT"}
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+// After: createAction 사용
+const incrementNew = createAction("INCREMENT");
 
-## Learn More
+console.log(incrementNew()); // {type: "INCREMENT"}
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- createAction을 사용하여 counter 예제 단순화
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```js
+const increment = createAction("INCREMENT");
+const decrement = createAction("DECREMENT");
+
+function counter(state = 0, action) {
+  switch (action.type) {
+    case increment.type:
+      return state + 1;
+    case decrement.type:
+      return state - 1;
+    default:
+      return state;
+  }
+}
+```
+
+<br />
+
+## 👨‍💻 createReducer
+
+- if문과 반복문을 포함하여 reducer에서 원하는 조건 논리를 사용할 수 있지만, 가장 일반적인 방법은 action.type 필드를 확인하고 각 유형에 대해 적절한 로직을 수행하는 것이다.
+- reducer는 초기 상태값을 제공하고, 현재 액션과 관계없는 상태는 그대로 반환한다.
+- Redux Toolkit에는 `lookup Table` 객체를 사용하여 reducer를 작성할 수 있는 createReducer()가 있다.
+- createReducer() 객체의 각 키는 redux의 액션 type 문자열이며 값은 reducer함수이다.
+- 액션 type 문자열을 키로 사용해야 하므로 `ES6 object computer 속성` 구문을 사용하여 type문자열 변수로 키를 작성할 수 있다.
+- computed 속성 구문은 내부에 있는 모든 변수에 대해 `toString()`을 호출하므로 `.type`필드없이 직접 액션 생성자 함수를 사용할 수 있습니다.
+
+```js
+const increment = createAction("INCREMENT");
+const decrement = createAction("DECREMENT");
+
+const counter = createReducer(0, {
+  [increment]: (state) => state + 1,
+  [decrement]: (state) => state - 1,
+});
+```
+
+<br />
+
+## 👨‍💻 createSlice
+
+- 위에 내용으로도 나쁘지 않지만, createSlice로 더 큰 변화를 줄 수 있다.
+- createSlice 함수는 객체에 reducer 함수들을 제공할 수 있고 이를 기반으로 액션 타입 문자열과 액션 생성자 함수를 자동으로 생성한다.
+- createSlice는 생성된 reducer 함수를 reducer라는 필드를 포함하는 `slice`객체와 `actions`라는 객체 내부에서 생성된 액션 생성함수를 반환한다.
+
+```js
+const counterSlice = createSlice({
+  name: "counter",
+  initialState: 0,
+  reducers: {
+    increment: (state) => state + 1,
+    decrement: (state) => state - 1,
+  },
+});
+
+const store = configureStore({
+  reducer: counterSlice.reducer,
+});
+```
+
+- 대부분의 경우, ES6 딕스트럭처링 구문을 이용하여 액션 생성자 함수와 reducer를 변수로 사용하기를 원한다.
+
+```js
+export const { increment, decrement } = counterSlice.actions;
+```
+
+<br />
+<hr />
+
+## 👨‍💻 createSlice(중급)
+
+- createSlice 옵션
+  - name: 생성 된 action types를 생성하기 위해 사용되는 prefix
+  - initialState: reducer의 초기 상태
+  - reducers: key는 action type 문자열이 되고 함수는 해당 액션이 dispatch될 때 실행될 reducer이다.
+- 예로, `todos/addTodo`액션이 dispatch될 때 addTodo Reducer가 수행된다.
+- createSlice와 createReducer는 `immer library`의 `produce`로 래핑한다. 이것은 이 함수를 사용하는 개발자는 리듀서 내부의 상태를 `변형하는` 코드를 작성할 수 있으며, immer는 상태를 안전하게 불변하게 다룰 수 있도록 처리해준다.(즉, push 같은 메서드 사용 가능)
+
+<br />
+
+- createSclie는 다음과 같은 객체를 반환한다.
+
+```
+  {
+  name: "todos",
+  reducer: (state, action) => newState,
+  actions: {
+    addTodo: (payload) => ({type: "todos/addTodo", payload}),
+    toggleTodo: (payload) => ({type: "todos/toggleTodo", payload})
+  },
+  caseReducers: {
+    addTodo: (state, action) => newState,
+    toggleTodo: (state, action) => newState,
+  }
+}
+```
+
+- 각 리듀서마다 적절한 action 생성자와 action type을 자동으로 생성하므로 직접 작성하지 않아도 된다.
